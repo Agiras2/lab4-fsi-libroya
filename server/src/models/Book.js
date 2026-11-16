@@ -45,5 +45,5 @@ const bookSchema = new mongoose.Schema(
 // Índice de búsqueda de texto
 bookSchema.index({ title: 'text', author: 'text' });
 
-export default mongoose.model('Book', bookSchema);
+export default mongoose.models.Book || mongoose.model('Book', bookSchema);
 

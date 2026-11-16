@@ -2,11 +2,12 @@ import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import { createServer } from 'http';
-import { Server as SocketIOServer } from 'socket.io';
-import jwt from 'jsonwebtoken';
 
 import { connectDB } from './config/db.js';
+import { initSocket } from './socket/index.js';
 import authRoutes from './routes/auth.routes.js';
+import booksRoutes from './routes/books.routes.js';
+import adminRoutes from './routes/admin.routes.js';
 import { errorHandler } from './middleware/errorHandler.js';
 
 const app = express();
@@ -27,46 +28,15 @@ app.use(
 app.use(express.json());
 
 // ─── Socket.IO (mismo proceso que Express) ───────────────────────────────────
-export const io = new SocketIOServer(httpServer, {
-  cors: {
-    origin: allowedOrigin,
-    methods: ['GET', 'POST'],
-  },
-});
-
-// Autenticación del handshake con JWT
-io.use((socket, next) => {
-  const token = socket.handshake.auth?.token;
-  if (!token) {
-    return next(new Error('connection:error — token no proporcionado'));
-  }
-  try {
-    const payload = jwt.verify(token, process.env.JWT_SECRET);
-    socket.data.userId = payload.sub;
-    socket.data.role = payload.role;
-    next();
-  } catch {
-    next(new Error('connection:error — token inválido'));
-  }
-});
-
-io.on('connection', (socket) => {
-  const { userId, role } = socket.data;
-
-  // Sala personal del usuario (el servidor asigna la sala, no el navegador)
-  socket.join(`user:${userId}`);
-
-  // Sala de administradores
-  if (role === 'admin') {
-    socket.join('admins');
-  }
-});
+export const io = initSocket(httpServer);
 
 // ─── Health check ────────────────────────────────────────────────────────────
 app.get('/health', (_req, res) => res.json({ status: 'ok' }));
 
 // ─── Rutas API ───────────────────────────────────────────────────────────────
 app.use('/api/auth', authRoutes);
+app.use('/api/books', booksRoutes);
+app.use('/api/admin', adminRoutes);
 
 // 404 para rutas desconocidas
 app.use((_req, res) => res.status(404).json({ error: 'Ruta no encontrada' }));
@@ -77,9 +47,14 @@ app.use(errorHandler);
 // ─── Arranque ─────────────────────────────────────────────────────────────────
 const PORT = process.env.PORT || 4000;
 
-connectDB().then(() => {
-  httpServer.listen(PORT, () => {
-    console.log(`[Server] LibroYa API corriendo en http://localhost:${PORT}`);
-    console.log(`[Server] CORS permitido para: ${allowedOrigin}`);
+// Solo escuchar cuando no estamos en modo prueba (vitest no debe bloquear el puerto)
+if (process.env.NODE_ENV !== 'test') {
+  connectDB().then(() => {
+    httpServer.listen(PORT, () => {
+      console.log(`[Server] LibroYa API corriendo en http://localhost:${PORT}`);
+      console.log(`[Server] CORS permitido para: ${allowedOrigin}`);
+    });
   });
-});
+}
+
+export { app, httpServer };

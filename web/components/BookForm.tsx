@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { apiClient } from '@/lib/apiClient';
+import type { Book } from './BookCard';
 
 const CATEGORIES = ['Novela', 'Ciencia', 'Historia', 'Infantil', 'Tecnología', 'Poesía', 'Otro'];
 
@@ -21,7 +22,7 @@ interface BookFormData {
 }
 
 interface BookFormProps {
-  initialData?: Partial<BookFormData> & { _id?: string };
+  initialData?: (Partial<BookFormData> | Partial<Book>) & { _id?: string; ebookFileUrl?: string };
   onSuccess: () => void;
   onCancel: () => void;
 }

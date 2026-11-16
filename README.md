@@ -129,8 +129,8 @@ Ejecuta Vitest + Supertest contra una base de datos `libroya-test` aislada.
 
 | Rol | Email | Contraseña |
 |-----|-------|------------|
-| Administrador | `admin@libroya.com` | Definida en `seed.js` |
-| Cliente | `cliente@libroya.com` | Definida en `seed.js` |
+| Administrador | `admin@libroya.com` | `Admin123!` |
+| Cliente | `cliente@libroya.com` | `Cliente123!` |
 
 ---
 

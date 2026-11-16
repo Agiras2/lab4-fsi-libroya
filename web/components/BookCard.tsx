@@ -10,6 +10,8 @@ export interface Book {
   _id: string;
   title: string;
   author: string;
+  isbn?: string;
+  description?: string;
   format: 'fisico' | 'ebook';
   price: number;
   coverUrl?: string;
