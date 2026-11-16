@@ -1,0 +1,72 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    font-family: theme('fontFamily.sans');
+    background-color: theme('colors.papel');
+    color: theme('colors.tinta');
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: theme('fontFamily.serif');
+    color: theme('colors.tinta');
+  }
+
+  /* Scroll suave */
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+@layer components {
+  /* Botón primario — verde botella */
+  .btn-primary {
+    @apply inline-flex items-center justify-center px-6 py-2.5 rounded-lg
+           bg-verde-600 text-white font-sans font-medium text-sm
+           hover:bg-verde-700 active:bg-verde-dark
+           transition-colors duration-150 cursor-pointer
+           disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  /* Botón secundario — terracota */
+  .btn-secondary {
+    @apply inline-flex items-center justify-center px-6 py-2.5 rounded-lg
+           bg-terracota-600 text-white font-sans font-medium text-sm
+           hover:bg-terracota-700 active:bg-terracota-dark
+           transition-colors duration-150 cursor-pointer
+           disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  /* Botón ghost */
+  .btn-ghost {
+    @apply inline-flex items-center justify-center px-4 py-2 rounded-lg
+           text-verde-600 font-sans font-medium text-sm
+           hover:bg-verde-50 transition-colors duration-150 cursor-pointer;
+  }
+
+  /* Campo de formulario */
+  .input-field {
+    @apply w-full px-4 py-2.5 rounded-lg border border-papel-dark
+           bg-white text-tinta placeholder-tinta-suave/50
+           focus:outline-none focus:ring-2 focus:ring-verde-500 focus:border-transparent
+           transition text-sm;
+  }
+
+  /* Tarjeta */
+  .card {
+    @apply bg-white rounded-xl shadow-sm border border-papel-dark p-6;
+  }
+
+  /* Badge de estado */
+  .badge {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+  }
+  .badge-green  { @apply badge bg-verde-50 text-verde-700; }
+  .badge-red    { @apply badge bg-red-50 text-red-700; }
+  .badge-orange { @apply badge bg-orange-50 text-orange-700; }
+  .badge-blue   { @apply badge bg-blue-50 text-blue-700; }
+  .badge-gray   { @apply badge bg-gray-100 text-gray-700; }
+}
+
