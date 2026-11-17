@@ -237,7 +237,7 @@ flowchart LR
 
 - **Interfaz:** https://web-production-eefb95a1.up.railway.app
 - **Cliente demo:** `cliente@libroya.com` / `Cliente123!`
-- **Administrador demo:** `admin@libroya.com` / `Admin123!`
+- **Administrador demo:** `admin@libroya.com` / `La contraseña de administrador se entrega en el informe del laboratorio`
 - Estas cuentas y los 16 libros (8 físicos y 8 ebooks) están definidos por el script de seed. Para que estén disponibles en el entorno de prueba, el seed debe haberse ejecutado contra la base de datos de ese entorno.
 - Libros físicos del seed que deben permitir comprobar alertas:
   - **Sapiens: De animales a dioses** — stock 2; umbral 3.

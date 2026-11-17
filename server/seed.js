@@ -3,6 +3,13 @@ import mongoose from 'mongoose';
 import User from './src/models/User.js';
 import Book from './src/models/Book.js';
 
+const SEED_ADMIN_PASSWORD = process.env.SEED_ADMIN_PASSWORD;
+
+if (!SEED_ADMIN_PASSWORD) {
+  console.error('[Seed] Error: SEED_ADMIN_PASSWORD debe definirse antes de ejecutar el seed.');
+  process.exit(1);
+}
+
 const MONGODB_URI = process.env.MONGODB_URI;
 
 if (!MONGODB_URI) {
@@ -20,7 +27,7 @@ const DEMO_USERS = [
   {
     name: 'Administrador LibroYa',
     email: 'admin@libroya.com',
-    password: 'Admin123!',
+    password: SEED_ADMIN_PASSWORD,
     role: 'admin',
   },
 ];

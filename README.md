@@ -19,7 +19,10 @@ libroya/
 - Autenticación: **JWT** (Bearer token en `localStorage`).
 - Pagos: **PayPal Orders API v2 (Sandbox)**.
 
-> **Limitación conocida:** Socket.IO no usa un adaptador de Redis, por lo que solo funciona correctamente con una única instancia del servidor. En un entorno de múltiples instancias se necesitaría `@socket.io/redis-adapter`.
+## Producción
+
+- Web: [https://web-production-eefb95a1.up.railway.app](https://web-production-eefb95a1.up.railway.app)
+- API: [https://server-production-94d0225e.up.railway.app](https://server-production-94d0225e.up.railway.app)
 
 ---
 
@@ -42,6 +45,7 @@ Copia `server/.env.example` a `server/.env` y completa:
 MONGODB_URI=mongodb+srv://<usuario>:<contraseña>@cluster.mongodb.net/libroya
 JWT_SECRET=una_cadena_aleatoria_larga_y_segura
 JWT_EXPIRES_IN=1d
+SEED_ADMIN_PASSWORD=una_contraseña_segura_para_el_admin
 CLIENT_ORIGIN=http://localhost:3000
 PORT=4000
 PAYPAL_CLIENT_ID=tu_client_id_de_sandbox
@@ -100,7 +104,7 @@ curl http://localhost:4000/health
 
 ## Seed de datos de prueba
 
-*(Disponible a partir de la Entrega 5)*
+Define `SEED_ADMIN_PASSWORD` en `server/.env` antes de sembrar. El proceso termina con un error claro si falta; al volver a ejecutarlo, actualiza la contraseña del administrador.
 
 ```bash
 cd server
@@ -121,16 +125,31 @@ cd server
 npm test
 ```
 
-Ejecuta Vitest + Supertest contra una base de datos `libroya-test` aislada.
+Ejecuta **37 pruebas automatizadas** con Vitest y Supertest contra una base de datos `libroya-test` aislada. El backend debe tener sus variables de entorno configuradas.
+
+### Pruebas E2E con TestSprite
+
+Se ejecutaron **27 casos E2E**. Se corrigió el defecto de permitir iniciar el pago sin completar la dirección de envío. El balance final fue: 25 casos aprobados, 1 falso positivo y 1 fallo por el tiempo de carga del iframe de PayPal Sandbox.
 
 ---
 
 ## Credenciales de demo
 
-| Rol | Email | Contraseña |
-|-----|-------|------------|
-| Administrador | `admin@libroya.com` | `Admin123!` |
+| Rol | Email | Contraseña / nota |
+|-----|-------|--------------------|
+| Administrador | `admin@libroya.com` | La contraseña de administrador se entrega en el informe del laboratorio |
 | Cliente | `cliente@libroya.com` | `Cliente123!` |
+
+---
+
+## Limitaciones conocidas
+
+- Los pagos utilizan PayPal Sandbox, no transacciones reales.
+- MongoDB Atlas permite conexiones desde `0.0.0.0/0` para admitir Railway; esta regla debería restringirse cuando sea posible.
+- El JWT se almacena en `localStorage`.
+- La cookie `libroya_role` solo protege la interfaz; la autorización real se valida en el backend.
+- Next.js 14 presenta vulnerabilidades cuya corrección disponible requiere migrar a Next.js 16. Se desactivó el optimizador de imágenes para mitigar el riesgo asociado a `/_next/image`; esto no corrige todas las vulnerabilidades reportadas.
+- Socket.IO no usa Redis, por lo que el servidor debe ejecutarse como una única instancia. Para múltiples instancias se necesitaría `@socket.io/redis-adapter`.
 
 ---
 
@@ -142,7 +161,7 @@ Ejecuta Vitest + Supertest contra una base de datos `libroya-test` aislada.
 | 2 | Catálogo, stock y carrito | ✅ Completa |
 | 3 | Pedidos y pagos con PayPal | ✅ Completa |
 | 4 | WebSockets y tablero Kanban | ✅ Completa |
-| 5 | Seed, pruebas y README completo | 🔜 Pendiente |
+| 5 | Seed, pruebas y README completo | ✅ Completa |
 
 ---
 
