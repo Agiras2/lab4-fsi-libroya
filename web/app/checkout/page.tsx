@@ -28,30 +28,16 @@ export default function CheckoutPage() {
 
   const [error, setError] = useState('');
   const [processing, setProcessing] = useState(false);
+  const direccionValida =
+    !hasPhysical ||
+    [address.fullName, address.street, address.city, address.phone].every((value) =>
+      value.trim().length > 0
+    );
+  const addressValidationMessage =
+    'Completa nombre, dirección, ciudad y teléfono para habilitar el pago';
 
   // Mantenemos referencia del orderId creado en el backend
   const createdOrderIdRef = useRef<string | null>(null);
-
-  const validateAddress = () => {
-    if (!hasPhysical) return true;
-    if (!address.fullName.trim()) {
-      setError('El nombre completo del destinatario es obligatorio.');
-      return false;
-    }
-    if (!address.street.trim()) {
-      setError('La dirección de entrega (calle / carrera) es obligatoria.');
-      return false;
-    }
-    if (!address.city.trim()) {
-      setError('La ciudad de destino es obligatoria.');
-      return false;
-    }
-    if (!address.phone.trim()) {
-      setError('El teléfono de contacto es obligatorio.');
-      return false;
-    }
-    return true;
-  };
 
   const paypalClientId =
     process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID || 'sb';
@@ -100,7 +86,8 @@ export default function CheckoutPage() {
                     required
                     value={address.fullName}
                     onChange={(e) => setAddress({ ...address, fullName: e.target.value })}
-                    className="input-field"
+                    aria-invalid={!address.fullName.trim()}
+                    className={`input-field${!address.fullName.trim() ? ' border-red-400' : ''}`}
                     placeholder="Ej. Ana María Gómez"
                   />
                 </div>
@@ -114,7 +101,8 @@ export default function CheckoutPage() {
                     required
                     value={address.street}
                     onChange={(e) => setAddress({ ...address, street: e.target.value })}
-                    className="input-field"
+                    aria-invalid={!address.street.trim()}
+                    className={`input-field${!address.street.trim() ? ' border-red-400' : ''}`}
                     placeholder="Ej. Cra 43A # 1-50 Apto 402"
                   />
                 </div>
@@ -128,7 +116,8 @@ export default function CheckoutPage() {
                     required
                     value={address.city}
                     onChange={(e) => setAddress({ ...address, city: e.target.value })}
-                    className="input-field"
+                    aria-invalid={!address.city.trim()}
+                    className={`input-field${!address.city.trim() ? ' border-red-400' : ''}`}
                     placeholder="Ej. Medellín"
                   />
                 </div>
@@ -142,7 +131,8 @@ export default function CheckoutPage() {
                     required
                     value={address.phone}
                     onChange={(e) => setAddress({ ...address, phone: e.target.value })}
-                    className="input-field"
+                    aria-invalid={!address.phone.trim()}
+                    className={`input-field${!address.phone.trim() ? ' border-red-400' : ''}`}
                     placeholder="Ej. 3001234567"
                   />
                 </div>
@@ -228,7 +218,7 @@ export default function CheckoutPage() {
             </div>
           </div>
 
-          {error && (
+          {error && error !== addressValidationMessage && (
             <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-xs text-red-700">
               {error}
             </div>
@@ -242,6 +232,15 @@ export default function CheckoutPage() {
 
           {/* Botones de PayPal Sandbox */}
           <div className="pt-2">
+            {hasPhysical && !direccionValida && (
+              <p
+                id="address-validation"
+                role="alert"
+                className="mb-3 text-xs text-red-700"
+              >
+                {addressValidationMessage}
+              </p>
+            )}
             <PayPalScriptProvider
               options={{
                 clientId: paypalClientId,
@@ -251,13 +250,17 @@ export default function CheckoutPage() {
             >
               <PayPalButtons
                 style={{ layout: 'vertical', color: 'gold', shape: 'rect', label: 'pay' }}
-                disabled={processing}
+                disabled={!direccionValida || processing}
+                forceReRender={[direccionValida]}
+                onClick={(_data, actions) => {
+                  if (!direccionValida) {
+                    setError(addressValidationMessage);
+                    return actions.reject();
+                  }
+                  return actions.resolve();
+                }}
                 createOrder={async () => {
                   setError('');
-                  if (!validateAddress()) {
-                    throw new Error('Completa los campos obligatorios de la dirección de envío');
-                  }
-
                   setProcessing(true);
 
                   try {

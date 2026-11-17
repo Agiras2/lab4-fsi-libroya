@@ -76,6 +76,28 @@ beforeEach(async () => {
 });
 
 describe('POST /api/orders (Creación de pedidos)', () => {
+  it('rechaza que un admin cree un pedido (403)', async () => {
+    const admin = await User.create({
+      name: 'Admin',
+      email: 'admin@test.com',
+      passwordHash: 'hash123',
+      role: 'admin',
+    });
+    const adminToken = jwt.sign(
+      { sub: admin._id.toString(), role: admin.role },
+      process.env.JWT_SECRET,
+      { expiresIn: '1h' }
+    );
+
+    const res = await request(app)
+      .post('/api/orders')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({ items: [] });
+
+    expect(res.status).toBe(403);
+    expect(res.body.error).toMatch(/no tienes permiso/i);
+  });
+
   it('recalcula el precio en el servidor e ignora precios enviados por el cliente', async () => {
     const book = await Book.create({
       title: 'Libro Caro',

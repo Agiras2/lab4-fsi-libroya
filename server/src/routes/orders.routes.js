@@ -12,7 +12,7 @@ import { requireRole } from '../middleware/role.js';
 const router = Router();
 
 // Rutas de cliente
-router.post('/', authenticate, requireRole('cliente', 'admin'), createOrder);
+router.post('/', authenticate, requireRole('cliente'), createOrder);
 router.get('/me', authenticate, getMyOrders);
 router.get('/:id', authenticate, getOrderById);
 
