@@ -37,3 +37,7 @@ Thumbs.db
 coverage/
 .vitest-cache/
 
+
+# Notas locales con credenciales
+pss.txt
+*.secret.txt
