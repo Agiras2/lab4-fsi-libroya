@@ -41,3 +41,6 @@ coverage/
 # Notas locales con credenciales
 pss.txt
 *.secret.txt
+
+# Configuracion local de agentes
+.claude/
