@@ -274,22 +274,29 @@ async function seed() {
     }
   }
 
-  // ── 2. Libros demo (Idempotente) ────────────────────────────────────────────
-  console.log('[Seed] Sembrando catálogo de libros...');
-  // Limpiamos libros previos para garantizar un catálogo consistente y sin duplicados
-  await Book.deleteMany({});
-  const inserted = await Book.insertMany(DEMO_BOOKS);
-  console.log(`  ✓ ${inserted.length} libros insertados exitosamente.`);
+  // ── 2. Libros demo (Idempotente con upsert para preservar _id estables) ──
+  console.log('[Seed] Sembrando catálogo de libros con upsert...');
+  const upsertedBooks = [];
+  for (const b of DEMO_BOOKS) {
+    const filter = b.format === 'fisico' && b.isbn ? { isbn: b.isbn } : { title: b.title };
+    const saved = await Book.findOneAndUpdate(
+      filter,
+      { $set: b },
+      { upsert: true, new: true, setDefaultsOnInsert: true }
+    );
+    upsertedBooks.push(saved);
+  }
+  console.log(`  ✓ ${upsertedBooks.length} libros procesados exitosamente.`);
 
-  const fisicos = inserted.filter((b) => b.format === 'fisico');
-  const ebooks = inserted.filter((b) => b.format === 'ebook');
-  const agotados = inserted.filter((b) => b.format === 'fisico' && b.stock === 0);
-  const bajoStock = inserted.filter(
+  const fisicos = upsertedBooks.filter((b) => b.format === 'fisico');
+  const ebooks = upsertedBooks.filter((b) => b.format === 'ebook');
+  const agotados = upsertedBooks.filter((b) => b.format === 'fisico' && b.stock === 0);
+  const bajoStock = upsertedBooks.filter(
     (b) => b.format === 'fisico' && b.stock > 0 && b.stock <= b.lowStockThreshold
   );
 
   console.log('\n[Seed] Resumen del catálogo:');
-  console.log(`  - Total libros: ${inserted.length}`);
+  console.log(`  - Total libros: ${upsertedBooks.length}`);
   console.log(`  - Físicos: ${fisicos.length}`);
   console.log(`  - Ebooks: ${ebooks.length}`);
   console.log(`  - Con stock bajo: ${bajoStock.length} (${bajoStock.map((b) => b.title).join(', ')})`);
