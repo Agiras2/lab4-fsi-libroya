@@ -1,9 +1,10 @@
 'use client';
 
-import { useEffect, useState, Suspense } from 'react';
+import { useEffect, useState, useCallback, Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { apiClient } from '@/lib/apiClient';
+import { useSocket } from '@/contexts/SocketContext';
 import type { Order } from '@/lib/types';
 
 function ShipmentBadge({ status }: { status?: string }) {
@@ -38,19 +39,74 @@ function MisPedidosContent() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  const { socket } = useSocket();
+
+  const showToast = useCallback((msg: string) => {
+    setToastMessage(msg);
+    setTimeout(() => setToastMessage(null), 4000);
+  }, []);
+
+  const fetchOrders = useCallback(async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const data = await apiClient<{ orders: Order[] }>('/api/orders/me');
+      setOrders(data.orders);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Error al cargar tus pedidos');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
-    setLoading(true);
-    apiClient<{ orders: Order[] }>('/api/orders/me')
-      .then((data) => setOrders(data.orders))
-      .catch((err) =>
-        setError(err instanceof Error ? err.message : 'Error al cargar tus pedidos')
-      )
-      .finally(() => setLoading(false));
-  }, []);
+    fetchOrders();
+  }, [fetchOrders]);
+
+  // Escuchar WebSockets de actualización en vivo y reconexión
+  useEffect(() => {
+    const handleReconnected = () => {
+      fetchOrders();
+    };
+    window.addEventListener('socket:reconnected', handleReconnected);
+
+    if (!socket) return () => window.removeEventListener('socket:reconnected', handleReconnected);
+
+    // Escuchar shipment:updated (el admin avanzó el estado del envío)
+    const handleShipmentUpdated = (data: {
+      orderId: string;
+      shipmentStatus: string;
+    }) => {
+      setOrders((prev) =>
+        prev.map((o) =>
+          o._id === data.orderId ? { ...o, shipmentStatus: data.shipmentStatus as any } : o
+        )
+      );
+      showToast(
+        `Tu pedido #${data.orderId.slice(-8).toUpperCase()} ahora está: ${data.shipmentStatus}`
+      );
+    };
+
+    socket.on('shipment:updated', handleShipmentUpdated);
+
+    return () => {
+      window.removeEventListener('socket:reconnected', handleReconnected);
+      socket.off('shipment:updated', handleShipmentUpdated);
+    };
+  }, [socket, fetchOrders, showToast]);
 
   return (
     <div className="max-w-5xl mx-auto space-y-8">
+      {/* Toast de notificación en vivo */}
+      {toastMessage && (
+        <div className="fixed top-20 right-6 z-50 bg-verde-700 text-white text-xs px-4 py-2.5 rounded-xl shadow-lg flex items-center gap-2 animate-fade-in border border-verde-600">
+          <span>📦</span>
+          <span className="font-medium">{toastMessage}</span>
+        </div>
+      )}
+
       {/* Banner de éxito al retornar de PayPal */}
       {showSuccessBanner && (
         <div className="p-4 bg-verde-50 border border-verde-200 rounded-xl flex items-center justify-between text-verde-900">
@@ -72,7 +128,7 @@ function MisPedidosContent() {
       <div>
         <h1 className="text-3xl font-serif font-bold text-tinta">Mis pedidos</h1>
         <p className="text-sm text-tinta-suave mt-1">
-          Historial de compras, estado del pago y seguimiento del despacho.
+          Historial de compras, estado del pago y seguimiento del despacho en vivo.
         </p>
       </div>
 

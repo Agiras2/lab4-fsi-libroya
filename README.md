@@ -141,7 +141,7 @@ Ejecuta Vitest + Supertest contra una base de datos `libroya-test` aislada.
 | 1 | Estructura base y autenticación | ✅ Completa |
 | 2 | Catálogo, stock y carrito | ✅ Completa |
 | 3 | Pedidos y pagos con PayPal | ✅ Completa |
-| 4 | WebSockets y tablero Kanban | 🔜 Pendiente |
+| 4 | WebSockets y tablero Kanban | ✅ Completa |
 | 5 | Seed, pruebas y README completo | 🔜 Pendiente |
 
 ---

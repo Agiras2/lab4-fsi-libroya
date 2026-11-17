@@ -4,6 +4,7 @@ import {
   getMyOrders,
   getOrderById,
   listAdminOrders,
+  updateShipmentStatus,
 } from '../controllers/orders.controller.js';
 import { authenticate } from '../middleware/auth.js';
 import { requireRole } from '../middleware/role.js';
@@ -17,6 +18,7 @@ router.get('/:id', authenticate, getOrderById);
 
 // Rutas de admin
 router.get('/', authenticate, requireRole('admin'), listAdminOrders);
+router.patch('/:id/shipment-status', authenticate, requireRole('admin'), updateShipmentStatus);
 
 export default router;
 

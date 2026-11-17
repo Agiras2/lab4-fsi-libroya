@@ -1,5 +1,14 @@
 import Order from '../models/Order.js';
 import Book from '../models/Book.js';
+import User from '../models/User.js';
+import { getIO } from '../socket/index.js';
+
+const ORDERED_STATES = ['PENDIENTE', 'PREPARANDO', 'ENVIADO', 'ENTREGADO'];
+const VALID_NEXT_STEP = {
+  PENDIENTE: 'PREPARANDO',
+  PREPARANDO: 'ENVIADO',
+  ENVIADO: 'ENTREGADO',
+};
 
 /**
  * POST /api/orders
@@ -152,16 +161,112 @@ export async function getOrderById(req, res, next) {
 
 /**
  * GET /api/orders
- * Listado para admin (pedidos pagados con físicos o todos).
+ * Listado para admin (por defecto pedidos PAGADOS con libros físicos para el tablero Kanban).
  */
 export async function listAdminOrders(req, res, next) {
   try {
-    const filter = {};
-    if (req.query.hasPhysical === 'true') filter.hasPhysical = true;
-    if (req.query.paymentStatus) filter.paymentStatus = req.query.paymentStatus;
+    const filter = {
+      paymentStatus: req.query.paymentStatus || 'PAGADO',
+      hasPhysical: req.query.hasPhysical !== undefined ? req.query.hasPhysical === 'true' : true,
+    };
+    if (req.query.shipmentStatus) {
+      filter.shipmentStatus = req.query.shipmentStatus;
+    }
 
     const orders = await Order.find(filter).sort({ createdAt: -1 });
     return res.json({ orders });
+  } catch (err) {
+    next(err);
+  }
+}
+
+/**
+ * PATCH /api/orders/:id/shipment-status
+ * Solo admin: avanza el estado del envío un solo paso según la máquina de estados.
+ */
+export async function updateShipmentStatus(req, res, next) {
+  try {
+    const { status } = req.body;
+
+    if (!status) {
+      return res.status(400).json({ error: 'El campo "status" es obligatorio' });
+    }
+
+    const order = await Order.findById(req.params.id);
+    if (!order) {
+      return res.status(404).json({ error: 'Pedido no encontrado' });
+    }
+
+    // Regla: Solo pedidos pagados
+    if (order.paymentStatus !== 'PAGADO') {
+      return res.status(400).json({
+        error: 'No se puede gestionar el envío de un pedido que no ha sido pagado',
+      });
+    }
+
+    // Regla: Solo pedidos con libros físicos
+    if (!order.hasPhysical) {
+      return res.status(400).json({
+        error: 'Este pedido solo contiene ebooks y no requiere gestión de envío',
+      });
+    }
+
+    const currentStatus = order.shipmentStatus || 'PENDIENTE';
+    const currentIndex = ORDERED_STATES.indexOf(currentStatus);
+    const targetIndex = ORDERED_STATES.indexOf(status);
+
+    if (targetIndex < 0) {
+      return res.status(400).json({
+        error: `Estado de envío no reconocido: "${status}". Valores permitidos: ${ORDERED_STATES.join(', ')}`,
+      });
+    }
+
+    if (currentStatus === status) {
+      return res.status(400).json({
+        error: `El pedido ya se encuentra en estado "${status}"`,
+      });
+    }
+
+    if (targetIndex < currentIndex) {
+      return res.status(400).json({
+        error: `Transición inválida: no está permitido retroceder de estado en el envío (${currentStatus} → ${status})`,
+      });
+    }
+
+    const nextAllowed = VALID_NEXT_STEP[currentStatus];
+    if (status !== nextAllowed) {
+      return res.status(400).json({
+        error: `Transición inválida: no está permitido saltar estados. Solo puede avanzar de "${currentStatus}" a "${nextAllowed}"`,
+      });
+    }
+
+    // Obtener nombre del administrador que realizó el cambio
+    const adminUser = await User.findById(req.user.id);
+    const changedByName = adminUser?.name || req.user.name || 'Administrador';
+
+    // Actualizar estado y agregar entrada al historial
+    order.shipmentStatus = status;
+    order.shipmentHistory.push({
+      status,
+      changedBy: changedByName,
+      changedAt: new Date(),
+    });
+
+    await order.save();
+
+    // Punto 3: Emitir shipment:updated a sala 'admins' y sala 'user:<userId>' con datos mínimos
+    const io = getIO();
+    if (io) {
+      const socketPayload = {
+        orderId: order._id.toString(),
+        shipmentStatus: order.shipmentStatus,
+        updatedAt: new Date().toISOString(),
+      };
+      io.to('admins').emit('shipment:updated', socketPayload);
+      io.to(`user:${order.userId.toString()}`).emit('shipment:updated', socketPayload);
+    }
+
+    return res.json({ success: true, order });
   } catch (err) {
     next(err);
   }

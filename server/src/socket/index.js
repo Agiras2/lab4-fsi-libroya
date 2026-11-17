@@ -19,7 +19,9 @@ export function initSocket(httpServer) {
   io.use((socket, next) => {
     const token = socket.handshake.auth?.token;
     if (!token) {
-      return next(new Error('connection:error — token no proporcionado'));
+      // Punto 1: Conexión de invitado anónimo permitida (recibe eventos públicos)
+      socket.data.role = 'guest';
+      return next();
     }
     try {
       const payload = jwt.verify(token, process.env.JWT_SECRET);
@@ -27,6 +29,7 @@ export function initSocket(httpServer) {
       socket.data.role = payload.role;
       next();
     } catch {
+      // Si se proporciona un token pero es inválido o expiró, rechazar
       next(new Error('connection:error — token inválido'));
     }
   });
@@ -34,8 +37,12 @@ export function initSocket(httpServer) {
   // ── Asignación de salas (el servidor decide, no el navegador) ────────────
   io.on('connection', (socket) => {
     const { userId, role } = socket.data;
-    socket.join(`user:${userId}`);
-    if (role === 'admin') socket.join('admins');
+    if (userId) {
+      socket.join(`user:${userId}`);
+    }
+    if (role === 'admin') {
+      socket.join('admins');
+    }
   });
 
   _io = io;
@@ -49,4 +56,3 @@ export function initSocket(httpServer) {
 export function getIO() {
   return _io; // null en tests; los controladores manejan el caso graciosamente
 }
-
