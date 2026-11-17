@@ -348,7 +348,7 @@ export default function CheckoutPage() {
             <p>🔒 Pago simulado seguro vía PayPal Sandbox API v2.</p>
             <p className="mt-1">
               ¿Dudas?{' '}
-              <Link href="/carrito" className="text-verde-700 hover:underline">
+              <Link href="/carrito" prefetch={false} className="text-verde-700 hover:underline">
                 Regresar al carrito
               </Link>
             </p>

@@ -119,7 +119,7 @@ function MisPedidosContent() {
               </p>
             </div>
           </div>
-          <Link href="/mi-biblioteca" className="btn-primary text-xs py-2 px-4 whitespace-nowrap">
+          <Link href="/mi-biblioteca" prefetch={false} className="btn-primary text-xs py-2 px-4 whitespace-nowrap">
             Ir a Mi Biblioteca →
           </Link>
         </div>
@@ -230,7 +230,7 @@ function MisPedidosContent() {
 
                   <div className="flex items-center gap-3">
                     {hasEbooks && order.paymentStatus === 'PAGADO' && (
-                      <Link href="/mi-biblioteca" className="btn-secondary text-xs py-2 px-3">
+                      <Link href="/mi-biblioteca" prefetch={false} className="btn-secondary text-xs py-2 px-3">
                         ⚡ Descargar ebooks en Mi Biblioteca
                       </Link>
                     )}

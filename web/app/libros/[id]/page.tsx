@@ -230,7 +230,7 @@ export default function BookDetailPage({
                 >
                   {added ? '✓ Agregado al carrito' : 'Agregar al carrito'}
                 </button>
-                <Link href="/carrito" className="btn-secondary py-3 px-6 rounded-xl text-base">
+                <Link href="/carrito" prefetch={false} className="btn-secondary py-3 px-6 rounded-xl text-base">
                   Ver carrito
                 </Link>
               </div>

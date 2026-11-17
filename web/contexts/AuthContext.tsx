@@ -7,6 +7,7 @@ import React, {
   useEffect,
   useState,
 } from 'react';
+import { useRouter } from 'next/navigation';
 import { apiClient } from '@/lib/apiClient';
 
 export interface AuthUser {
@@ -29,6 +30,7 @@ interface AuthContextValue {
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const router = useRouter();
   const [user, setUser] = useState<AuthUser | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -41,7 +43,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     document.cookie = `libroya_role=${newUser.role}; path=/; SameSite=Lax`;
     setToken(newToken);
     setUser(newUser);
-  }, []);
+    router.refresh();
+  }, [router]);
 
   const clearSession = useCallback(() => {
     localStorage.removeItem('libroya_token');
@@ -49,7 +52,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     document.cookie = 'libroya_role=; path=/; max-age=0';
     setToken(null);
     setUser(null);
-  }, []);
+    router.refresh();
+  }, [router]);
 
   // Rehydrate session on mount
   useEffect(() => {
